@@ -6,8 +6,8 @@ const formulario = document.getElementById('form-paciente');
 const tabela = document.getElementById('tabela-pacientes');
 
 // Função responsável por adicionar um paciente ao array
-function adicionarPaciente(nome, email, nascimento) {
-  const novoPaciente = { nome, email, nascimento };
+function adicionarPaciente(nome, email, telefone, nascimento) {
+  const novoPaciente = { nome, email, telefone, nascimento };
   pacientes.push(novoPaciente);
 }
 
@@ -18,11 +18,13 @@ function renderizarTabela() {
   pacientes.forEach((paciente) => {
     const linha = document.createElement('tr');
 
-    linha.innerHTML = `
-      <td>${paciente.nome}</td>
-      <td>${paciente.email}</td>
-      <td>${formatarData(paciente.nascimento)}</td>
-    `;
+  linha.innerHTML = `
+  <td>${paciente.nome}</td>
+  <td>${paciente.email}</td>
+  <td>${paciente.telefone}</td>
+  <td>${formatarData(paciente.nascimento)}</td>
+  <td>${calcularIdade(paciente.nascimento)} anos</td>
+`;
 
     tabela.appendChild(linha);
   });
@@ -33,16 +35,35 @@ function formatarData(dataISO) {
   const [ano, mes, dia] = dataISO.split('-');
   return `${dia}/${mes}/${ano}`;
 }
+function calcularIdade(dataNascimento) {
+  const hoje = new Date();
+  const nascimento = new Date(dataNascimento);
+
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+
+  const mesAtual = hoje.getMonth();
+  const mesNascimento = nascimento.getMonth();
+
+  if (
+    mesAtual < mesNascimento ||
+    (mesAtual === mesNascimento && hoje.getDate() < nascimento.getDate())
+  ) {
+    idade--;
+  }
+
+  return idade;
+}
 
 // Evento disparado quando o formulário é enviado
 formulario.addEventListener('submit', (event) => {
   event.preventDefault(); // evita o recarregamento da página
 
-  const nome = document.getElementById('nome').value;
-  const email = document.getElementById('email').value;
-  const nascimento = document.getElementById('nascimento').value;
+const nome = document.getElementById('nome').value;
+const email = document.getElementById('email').value;
+const telefone = document.getElementById('telefone').value;
+const nascimento = document.getElementById('nascimento').value;
 
-  adicionarPaciente(nome, email, nascimento);
+  adicionarPaciente(nome, email, telefone, nascimento);
   renderizarTabela();
 
   formulario.reset(); // limpa os campos do formulário
