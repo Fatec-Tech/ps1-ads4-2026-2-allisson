@@ -163,6 +163,6 @@ formulario.addEventListener('submit', async (event) => {
   }
 });
 
-botaoCancelar.addEventListener('click', limparFormulario);
+document.getElementById('btn-cancelar')?.addEventListener('click', limparFormulario);
 
 listarPacientes();
