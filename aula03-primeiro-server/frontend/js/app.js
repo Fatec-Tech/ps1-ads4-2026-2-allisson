@@ -1,176 +1,168 @@
-const URL_API = 'http://localhost:3000/pacientes';
-const pacientes = [];
+// Em produção (Render). Para testar localmente, troque por 'http://localhost:3000/pacientes'
+// Colocar a url de SUA api criada no render
+const URL_API = 'https://ps1-ads4-2026-2-allisson.onrender.com/pacientes';
 
-const formulario =
-	document.getElementById('form-paciente') ||
-	document.getElementById('formPaciente');
+const formulario = document.getElementById('form-paciente');
+const tabela = document.getElementById('tabela-pacientes');
+const mensagem = document.getElementById('mensagem');
+const mensagemCarregando = document.getElementById('carregando');
 
-const tabela =
-	document.getElementById('tabela-pacientes') ||
-	document.getElementById('tabelaPacientes');
+const campoId = document.getElementById('id');
+const campoNome = document.getElementById('nome');
+const campoEmail = document.getElementById('email');
+const campoNascimento = document.getElementById('nascimento');
+const botaoSalvar = document.getElementById('btn-salvar');
+const botaoCancelar = document.getElementById('btn-cancelar');
 
-const mensagemCarregando =
-	document.getElementById('carregando') ||
-	document.getElementById('mensagemCarregando');
+// ---------- Utilidades de interface ----------
 
-const totalTabela = document.getElementById('totalTabela');
-const totalAPI = document.getElementById('totalAPI');
-const botaoRecarregar = document.getElementById('botaoRecarregar');
-const mensagemFormulario = document.getElementById('mensagemFormulario');
-
-let carregando = false;
-
-// Adiciona um paciente à lista local.
-function adicionarPaciente(nome, email, nascimento) {
-	pacientes.push({ nome, email, nascimento });
-}
-
-// Formata a data para dia/mês/ano.
 function formatarData(dataISO) {
-	const [ano, mes, dia] = dataISO.split('-');
-	return `${dia}/${mes}/${ano}`;
+  const [ano, mes, dia] = dataISO.split('-');
+  return `${dia}/${mes}/${ano}`;
 }
 
-// Cria uma célula da tabela.
+function mostrarMensagem(texto, tipo = 'danger') {
+  mensagem.innerHTML = '';
+  const alerta = document.createElement('div');
+  alerta.className = `alert alert-${tipo}`;
+  alerta.textContent = texto; // textContent evita injeção de HTML
+  mensagem.appendChild(alerta);
+}
+
 function criarCelula(texto) {
-	const celula = document.createElement('td');
-	celula.textContent = texto;
-	return celula;
+  const celula = document.createElement('td');
+  celula.textContent = texto;
+  return celula;
 }
 
-// Atualiza a tabela.
-function renderizarTabela() {
-	tabela.replaceChildren();
+function renderizarTabela(pacientes) {
+  tabela.innerHTML = '';
 
-	pacientes.forEach((paciente) => {
-		const linha = document.createElement('tr');
+  pacientes.forEach((paciente) => {
+    const linha = document.createElement('tr');
 
-		linha.append(
-			criarCelula(paciente.nome),
-			criarCelula(paciente.email),
-			criarCelula(formatarData(paciente.nascimento))
-		);
+    linha.appendChild(criarCelula(paciente.nome));
+    linha.appendChild(criarCelula(paciente.email));
+    linha.appendChild(criarCelula(formatarData(paciente.nascimento)));
 
-		tabela.appendChild(linha);
-	});
+    const celulaAcoes = document.createElement('td');
 
-	if (totalTabela) {
-		totalTabela.textContent = pacientes.length;
-	}
+    const botaoEditar = document.createElement('button');
+    botaoEditar.textContent = 'Editar';
+    botaoEditar.className = 'btn btn-sm btn-outline-primary me-2';
+    botaoEditar.addEventListener('click', () => iniciarEdicao(paciente));
+
+    const botaoExcluir = document.createElement('button');
+    botaoExcluir.textContent = 'Excluir';
+    botaoExcluir.className = 'btn btn-sm btn-outline-danger';
+    botaoExcluir.addEventListener('click', () => excluirPaciente(paciente.id));
+
+    celulaAcoes.appendChild(botaoEditar);
+    celulaAcoes.appendChild(botaoExcluir);
+    linha.appendChild(celulaAcoes);
+
+    tabela.appendChild(linha);
+  });
 }
 
-// Consulta a API e verifica erros HTTP.
-async function buscarJSON(url) {
-	const resposta = await fetch(url);
+function iniciarEdicao(paciente) {
+  campoId.value = paciente.id;
+  campoNome.value = paciente.nome;
+  campoEmail.value = paciente.email;
+  campoNascimento.value = paciente.nascimento;
 
-	if (!resposta.ok) {
-		throw new Error(`Erro HTTP: ${resposta.status}`);
-	}
-
-	return resposta.json();
+  botaoSalvar.textContent = 'Atualizar';
+  botaoCancelar.classList.remove('d-none');
+  campoNome.focus();
 }
 
-// Carrega os pacientes do backend.
-async function carregarPacientesIniciais() {
-	if (carregando) return;
-
-	carregando = true;
-
-	const botaoCadastrar = formulario.querySelector(
-		'button[type="submit"], input[type="submit"]'
-	);
-
-	if (botaoCadastrar) botaoCadastrar.disabled = true;
-	if (botaoRecarregar) botaoRecarregar.disabled = true;
-
-	mensagemCarregando.hidden = false;
-	mensagemCarregando.style.display = 'block';
-	mensagemCarregando.classList.remove('erro');
-	mensagemCarregando.textContent = 'Carregando pacientes...';
-
-	if (mensagemFormulario) {
-		mensagemFormulario.textContent = '';
-	}
-
-	pacientes.length = 0;
-	renderizarTabela();
-
-	if (totalAPI) totalAPI.textContent = '—';
-
-	try {
-		const dados = await buscarJSON(URL_API);
-
-		dados.forEach((paciente) => {
-			adicionarPaciente(
-				paciente.nome,
-				paciente.email,
-				paciente.nascimento
-			);
-		});
-
-		renderizarTabela();
-		mensagemCarregando.style.display = 'none';
-
-		// Consulta o total quando esse indicador existe no HTML.
-		if (totalAPI) {
-			try {
-				const resumo = await buscarJSON(`${URL_API}/total`);
-				totalAPI.textContent = resumo.total;
-			} catch (erro) {
-				totalAPI.textContent = 'Indisponível';
-				console.error('Erro ao consultar o total:', erro);
-			}
-		}
-	} catch (erro) {
-		console.error('Não foi possível carregar os pacientes:', erro);
-
-		mensagemCarregando.classList.add('erro');
-		mensagemCarregando.textContent =
-			'Erro ao carregar pacientes. O servidor está rodando? ' +
-			'Inicie o backend e atualize a página.';
-	} finally {
-		carregando = false;
-
-		if (botaoCadastrar) botaoCadastrar.disabled = false;
-		if (botaoRecarregar) botaoRecarregar.disabled = false;
-	}
+function limparFormulario() {
+  formulario.reset();
+  campoId.value = '';
+  botaoSalvar.textContent = 'Salvar';
+  botaoCancelar.classList.add('d-none');
 }
 
-// Cadastro na tabela do navegador.
-formulario.addEventListener('submit', (event) => {
-	event.preventDefault();
+// ---------- Comunicação com a API (um método HTTP por operação) ----------
 
-	if (carregando || !formulario.reportValidity()) return;
+// READ — GET /pacientes
+async function listarPacientes() {
+  try {
+    const resposta = await fetch(URL_API);
 
-	const nome = document.getElementById('nome').value.trim();
-	const email = document.getElementById('email').value.trim();
-	const nascimento = document.getElementById('nascimento').value;
+    if (!resposta.ok) {
+      throw new Error(`Erro HTTP: ${resposta.status}`);
+    }
 
-	if (!nome || !email || !nascimento) {
-		alert('Preencha todos os campos.');
-		return;
-	}
+    const pacientes = await resposta.json();
+    renderizarTabela(pacientes);
+    mensagemCarregando.style.display = 'none';
+  } catch (erro) {
+    console.error(erro);
+    mensagemCarregando.style.display = 'none';
+    mostrarMensagem('Não foi possível carregar os pacientes. O servidor está no ar?');
+  }
+}
 
-	adicionarPaciente(nome, email, nascimento);
-	renderizarTabela();
-	formulario.reset();
+// CREATE (POST) ou UPDATE (PUT), conforme exista ou não um id
+async function salvarPaciente(dados, id) {
+  const metodo = id ? 'PUT' : 'POST';
+  const url = id ? `${URL_API}/${id}` : URL_API;
 
-	document.getElementById('nome').focus();
+  const resposta = await fetch(url, {
+    method: metodo,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados), // objeto JS → texto JSON
+  });
 
-	if (mensagemFormulario) {
-		mensagemFormulario.textContent =
-			'Paciente adicionado nesta sessão. Ao recarregar, ' +
-			'a tabela volta aos dados do backend.';
-	}
+  if (!resposta.ok) {
+    const erro = await resposta.json();
+    throw new Error(erro.erro || `Erro HTTP: ${resposta.status}`);
+  }
+}
+
+// DELETE — DELETE /pacientes/:id
+async function excluirPaciente(id) {
+  if (!confirm('Deseja realmente excluir este paciente?')) {
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${URL_API}/${id}`, { method: 'DELETE' });
+
+    if (!resposta.ok) {
+      throw new Error(`Erro HTTP: ${resposta.status}`);
+    }
+
+    mostrarMensagem('Paciente excluído com sucesso.', 'success');
+    await listarPacientes();
+  } catch (erro) {
+    console.error(erro);
+    mostrarMensagem('Não foi possível excluir o paciente.');
+  }
+}
+
+// ---------- Eventos ----------
+
+formulario.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const dados = {
+    nome: campoNome.value,
+    email: campoEmail.value,
+    nascimento: campoNascimento.value,
+  };
+
+  try {
+    await salvarPaciente(dados, campoId.value);
+    mostrarMensagem('Paciente salvo com sucesso.', 'success');
+    limparFormulario();
+    await listarPacientes(); // sempre relê do servidor: a fonte da verdade é a API
+  } catch (erro) {
+    mostrarMensagem(erro.message);
+  }
 });
 
-// Botão opcional para buscar novamente os dados da API.
-if (botaoRecarregar) {
-	botaoRecarregar.addEventListener(
-		'click',
-		carregarPacientesIniciais
-	);
-}
+botaoCancelar.addEventListener('click', limparFormulario);
 
-// Inicialização.
-carregarPacientesIniciais();
+listarPacientes();
