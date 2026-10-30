@@ -1,0 +1,14 @@
+{
+  "name": "api-clinica",
+  "version": "1.0.0",
+  "description": "API REST de cadastro de pacientes com Express",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.0.0"
+  }
+}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Pacientes</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container">
+    <header class="cabecalho">
+      <p class="etiqueta">Sistema de clínica</p>
+      <h1>Cadastro de pacientes</h1>
+      <p class="subtitulo">Cadastre, consulte, atualize e remova registros pela API.</p>
+    </header>
+
+    <section class="cartao">
+      <h2 id="titulo-formulario">Novo paciente</h2>
+      <div id="mensagem" aria-live="polite"></div>
+      <form id="form-paciente">
+        <input type="hidden" id="id">
+        <div class="campos">
+          <label>Nome
+            <input type="text" id="nome" required maxlength="120" placeholder="Nome completo">
+          </label>
+          <label>E-mail
+            <input type="email" id="email" required maxlength="160" placeholder="nome@email.com">
+          </label>
+          <label>Data de nascimento
+            <input type="date" id="nascimento" required>
+          </label>
+        </div>
+        <div class="acoes-formulario">
+          <button type="submit" id="btn-salvar">Cadastrar paciente</button>
+          <button type="button" id="btn-cancelar" class="secundario oculto">Cancelar edição</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="cartao">
+      <div class="titulo-lista">
+        <div><p class="etiqueta">Registros</p><h2>Pacientes cadastrados</h2></div>
+        <button type="button" id="btn-atualizar-lista" class="secundario">Atualizar lista</button>
+      </div>
+      <p id="carregando" class="estado">Carregando pacientes...</p>
+      <div class="tabela-responsiva">
+        <table>
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Nascimento</th><th>Ações</th></tr></thead>
+          <tbody id="tabela-pacientes"></tbody>
+        </table>
+      </div>
+      <p id="lista-vazia" class="estado oculto">Nenhum paciente cadastrado.</p>
+    </section>
+    <footer>Atividade prática · Express e CRUD</footer>
+  </main>
+  <script src="js/app.js"></script>
+</body>
+</html>
