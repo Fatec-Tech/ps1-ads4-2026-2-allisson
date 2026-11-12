@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const COLUNAS = 'id, nome, email, nascimento';
+const COLUNAS = 'id, nome, email, nascimento, telefone';
 
 function dadosValidos(corpo) {
   const { nome, email, nascimento } = corpo ?? {};
@@ -46,6 +46,38 @@ app.get('/pacientes', async (_req, res) => {
   }
 });
 
+// Conta todos os pacientes
+app.get('/pacientes/total', async (_req, res) => {
+  try {
+    const resultado = await pool.query(
+      'SELECT COUNT(*) AS total FROM pacientes'
+    );
+    return res.json({ total: Number(resultado.rows[0].total) });
+  } catch (erro) {
+    return tratarErro(res, erro);
+  }
+});
+
+// Busca pacientes pelo nome
+app.get('/pacientes/busca', async (req, res) => {
+  try {
+    const nome = req.query.nome;
+
+    if (!nome) {
+      return res.status(400).json({ erro: 'Informe o nome para buscar' });
+    }
+
+    const resultado = await pool.query(
+      `SELECT ${COLUNAS} FROM pacientes WHERE nome ILIKE $1 ORDER BY id`,
+      [`%${nome}%`]
+    );
+
+    return res.json(resultado.rows);
+  } catch (erro) {
+    return tratarErro(res, erro);
+  }
+});
+
 // Busca um paciente pelo ID
 app.get('/pacientes/:id', async (req, res) => {
   const id = Number(req.params.id);
@@ -78,14 +110,14 @@ app.post('/pacientes', async (req, res) => {
     });
   }
 
-  const { nome, email, nascimento } = req.body;
+  const { nome, email, nascimento, telefone } = req.body;
 
   try {
     const resultado = await pool.query(
-      `INSERT INTO pacientes (nome, email, nascimento)
-       VALUES ($1, $2, $3)
+      `INSERT INTO pacientes (nome, email, nascimento, telefone)
+       VALUES ($1, $2, $3, $4)
        RETURNING ${COLUNAS}`,
-      [nome, email, nascimento]
+      [nome, email, nascimento, telefone ?? null]
     );
 
     return res.status(201).json(resultado.rows[0]);
@@ -108,15 +140,15 @@ app.put('/pacientes/:id', async (req, res) => {
     });
   }
 
-  const { nome, email, nascimento } = req.body;
+  const { nome, email, nascimento, telefone } = req.body;
 
   try {
     const resultado = await pool.query(
       `UPDATE pacientes
-       SET nome = $1, email = $2, nascimento = $3
-       WHERE id = $4
+       SET nome = $1, email = $2, nascimento = $3, telefone = $4
+       WHERE id = $5
        RETURNING ${COLUNAS}`,
-      [nome, email, nascimento, id]
+      [nome, email, nascimento, telefone ?? null, id]
     );
 
     if (resultado.rowCount === 0) {
