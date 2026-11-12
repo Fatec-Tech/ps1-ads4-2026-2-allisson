@@ -35,11 +35,21 @@ app.get('/', (_req, res) => {
 });
 
 // Lista todos os pacientes
-app.get('/pacientes', async (_req, res) => {
+app.get('/pacientes', async (req, res) => {
   try {
-    const resultado = await pool.query(
-      `SELECT ${COLUNAS} FROM pacientes ORDER BY id`
-    );
+    const nome = req.query.nome;
+
+    const resultado = nome
+      ? await pool.query(
+          `SELECT ${COLUNAS} FROM pacientes
+           WHERE nome ILIKE $1
+           ORDER BY id`,
+          [`%${nome}%`]
+        )
+      : await pool.query(
+          `SELECT ${COLUNAS} FROM pacientes ORDER BY id`
+        );
+
     return res.json(resultado.rows);
   } catch (erro) {
     return tratarErro(res, erro);
@@ -71,6 +81,28 @@ app.get('/pacientes/busca', async (req, res) => {
       `SELECT ${COLUNAS} FROM pacientes WHERE nome ILIKE $1 ORDER BY id`,
       [`%${nome}%`]
     );
+
+    return res.json(resultado.rows);
+  } catch (erro) {
+    return tratarErro(res, erro);
+  }
+});
+
+// Lista todos os pacientes ou busca pelo nome
+app.get('/pacientes', async (req, res) => {
+  try {
+    const nome = req.query.nome;
+
+    const resultado = nome
+      ? await pool.query(
+          `SELECT ${COLUNAS} FROM pacientes
+           WHERE nome ILIKE $1
+           ORDER BY id`,
+          [`%${nome}%`]
+        )
+      : await pool.query(
+          `SELECT ${COLUNAS} FROM pacientes ORDER BY id`
+        );
 
     return res.json(resultado.rows);
   } catch (erro) {
