@@ -1,5 +1,11 @@
 // No deploy, substitua pela URL do seu backend no Render, terminando em /pacientes.
-const URL_API = 'http://localhost:3000/pacientes';
+const estaLocal =
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1';
+
+const URL_API = estaLocal
+  ? 'http://localhost:3000/pacientes'
+  : 'https://ps1-ads4-2026-2-allisson.onrender.com/pacientes';
 
 const formulario = document.getElementById('form-paciente');
 const tabela = document.getElementById('tabela-pacientes');
